@@ -8,8 +8,18 @@ using WebApplication_sixteen_clothing.ViewModels.ProductViewModels;
 namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class ProductController(AppDbContext _context,IWebHostEnvironment _environment) : Controller
+    public class ProductController : Controller
     {
+        private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+        private readonly string _folderPath;
+        public ProductController(AppDbContext context, IWebHostEnvironment enviroment)
+        {
+            _context = context;
+            _environment = enviroment;
+            _folderPath =Path.Combine(_environment.WebRootPath, "assets", "images");
+        }
+
         public async Task<IActionResult> Index()
         {
             var products = await _context.Products.Select(x=>new ProductGetVM
@@ -60,8 +70,8 @@ namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
             }
 
             string uniqueFileName = Guid.NewGuid().ToString() + vm.Image.FileName;
-            string folderPath = Path.Combine(_environment.WebRootPath, "assets", "images");
-            string path= Path.Combine(folderPath, uniqueFileName);
+         
+            string path= Path.Combine(_folderPath, uniqueFileName);
 
             using FileStream stream = new FileStream(path, FileMode.Create);
             await vm.Image.CopyToAsync(stream);
@@ -91,6 +101,13 @@ namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
+
+            string deletedImagePath = Path.Combine(_folderPath, product.ImagePath);
+
+            if(System.IO.File.Exists(deletedImagePath))
+                System.IO.File.Delete(deletedImagePath);
+
+            return RedirectToAction("Index");
         }
 
 
