@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using WebApplication_sixteen_clothing.Contexts;
+using WebApplication_sixteen_clothing.Helpers;
 using WebApplication_sixteen_clothing.Models;
 using WebApplication_sixteen_clothing.ViewModels.ProductViewModels;
 
@@ -49,7 +50,7 @@ namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
         public async Task<IActionResult> CreateAsync(ProductCreateVM vm)
         {
             await _SendCategoriesWithViewBag();
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return View(vm);
 
             var isExistcategory = await _context.Categories.AnyAsync(x => x.Id == vm.CategoryId);
@@ -58,24 +59,25 @@ namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
                 ModelState.AddModelError("CategoryId", "This category is not found");
                 return View(vm);
             }
-            if (vm.Image.Length > 2 * 1024 * 1024)
+            if (!vm.Image.CheckSize(2))
             {
                 ModelState.AddModelError("Image", "Image's maximum size must be 2 mb");
                 return View(vm);
             }
-            if (!vm.Image.ContentType.Contains("image"))
+            if (!vm.Image.CheckType("image"))
             {
                 ModelState.AddModelError("Image", "You can upload file in only image format ");
                 return View(vm);
             }
 
-            string uniqueFileName = Guid.NewGuid().ToString() + vm.Image.FileName;
+            /*string uniqueFileName = Guid.NewGuid().ToString() + vm.Image.FileName;
          
             string path= Path.Combine(_folderPath, uniqueFileName);
 
             using FileStream stream = new FileStream(path, FileMode.Create);
             await vm.Image.CopyToAsync(stream);
-
+*/
+            string uniqueFileName =  await vm.Image.FileUploadAsync(_folderPath);
             Product product = new()
             {
                 Name = vm.Name,
@@ -103,11 +105,84 @@ namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
             await _context.SaveChangesAsync();
 
             string deletedImagePath = Path.Combine(_folderPath, product.ImagePath);
-
-            if(System.IO.File.Exists(deletedImagePath))
-                System.IO.File.Delete(deletedImagePath);
+            /*
+                        if(System.IO.File.Exists(deletedImagePath))
+                            System.IO.File.Delete(deletedImagePath);*/
+            FileHelper.FileDelete(deletedImagePath);
 
             return RedirectToAction("Index");
+        }
+
+
+        public async Task<IActionResult> Update(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product is null)
+                return NotFound();
+
+            ProductUpdateVM vm = new()
+            {
+                Id = product.Id,
+                CategoryId = product.CategoryId,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                Rating = product.Rating
+            };
+
+            await _SendCategoriesWithViewBag();
+            return View(vm);
+        }
+
+        [HttpPost]
+
+        public async Task<IActionResult> UpdateAsync(ProductUpdateVM vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+
+
+            var isExistcategory = await _context.Categories.AnyAsync(x => x.Id == vm.CategoryId);
+            if (!isExistcategory)
+            {
+                ModelState.AddModelError("CategoryId", "This category is not found");
+                return View(vm);
+            }
+            if (!vm.Image?.CheckSize(2) ?? false)
+            {
+                ModelState.AddModelError("Image", "Image's maximum size must be 2 mb");
+                return View(vm);
+            }
+            if (!vm.Image?.CheckType("image") ?? false)
+            {
+                ModelState.AddModelError("Image", "You can upload file in only image format ");
+                return View(vm);
+            }
+
+            var existProduct = await _context.Products.FindAsync(vm.Id);
+            if (existProduct is null)
+                return BadRequest();
+
+              
+
+            existProduct.Name = vm.Name;
+            existProduct.Description = vm.Description;
+            existProduct.Rating = vm.Rating;
+            existProduct.CategoryId = vm.CategoryId;
+            existProduct.Price = vm.Price;
+
+            if(vm.Image is { })
+            {
+                string newImagePath = await vm.Image.FileUploadAsync(_folderPath);
+                string oldImagePath = Path.Combine(_folderPath, existProduct.ImagePath);
+                FileHelper.FileDelete(oldImagePath);
+                existProduct.ImagePath = newImagePath;
+            }
+
+            _context.Products.Update(existProduct);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+
         }
 
 
