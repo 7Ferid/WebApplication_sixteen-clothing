@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol;
 using WebApplication_sixteen_clothing.Contexts;
+using WebApplication_sixteen_clothing.Models;
 
 namespace WebApplication_sixteen_clothing
 {
@@ -17,7 +19,10 @@ namespace WebApplication_sixteen_clothing
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
             });
+            builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+            {
 
+            }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
             var app = builder.Build();
 
             
