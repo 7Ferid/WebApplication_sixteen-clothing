@@ -32,6 +32,7 @@ namespace WebApplication_sixteen_clothing
 
             app.UseRouting();
 
+            app.UseAuthentication();// bunuda rolebackden sonra yaziriq
             app.UseAuthorization();
           
                 app.MapControllerRoute(

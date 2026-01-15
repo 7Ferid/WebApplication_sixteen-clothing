@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using WebApplication_sixteen_clothing.Contexts;
 using WebApplication_sixteen_clothing.Helpers;
 using WebApplication_sixteen_clothing.Models;
@@ -9,6 +10,7 @@ using WebApplication_sixteen_clothing.ViewModels.ProductViewModels;
 namespace WebApplication_sixteen_clothing.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Admin")]
     public class ProductController : Controller
     {
         private readonly AppDbContext _context;

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication_sixteen_clothing.Contexts;
@@ -24,6 +25,13 @@ namespace WebApplication_sixteen_clothing.Controllers
 
 
             return View(products);
+        }
+
+        //roleback yazandan sonra bunu yaziriq
+        [Authorize (Roles ="Member")]
+        public IActionResult Test()
+        {
+            return Ok("Saaaaaaaaaaaaaaaaaalammmmmmmmm");
         }
 
     }

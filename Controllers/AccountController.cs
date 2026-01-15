@@ -6,7 +6,7 @@ using WebApplication_sixteen_clothing.ViewModels.UserViewModels;
 
 namespace WebApplication_sixteen_clothing.Controllers
 {
-    public class AccountController(UserManager<AppUser> _userManager,SignInManager<AppUser> _signInManager) : Controller
+    public class AccountController(UserManager<AppUser> _userManager,SignInManager<AppUser> _signInManager,RoleManager<IdentityRole> _roleManager) : Controller
     {
         public IActionResult Register()
         {
@@ -33,6 +33,12 @@ namespace WebApplication_sixteen_clothing.Controllers
                 }
                 return View(vm);
             }
+            //rolebacki yazandan sonra bunu yaziriq 
+            await _userManager.AddToRoleAsync(user, "Member");
+
+
+
+
             await _signInManager.SignInAsync(user, false);
             return RedirectToAction("Index", "Home");
         }
@@ -61,5 +67,24 @@ namespace WebApplication_sixteen_clothing.Controllers
             }
             return RedirectToAction("Index", "Home");
         }
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Login");
+        }
+
+        public async Task<IActionResult> CreateRoles()
+        {
+            await _roleManager.CreateAsync(new IdentityRole()
+            {
+                Name="Admin"
+            });
+            await _roleManager.CreateAsync(new IdentityRole()
+            {
+                Name = "Member"
+            });
+            return Ok("Role was Created")
+        }
+
     }
 }
